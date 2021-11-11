@@ -4,8 +4,22 @@ import com.example.demo.domain.model.FileTable;
 import com.example.demo.domain.model.Movie;
 import com.example.demo.repository.FileRepository;
 import com.example.demo.repository.MovieRepository;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+//autenticacion identificarse, con password
+//autorizacion dar permisos para hacer comentarios, dar like etc
+//se hace con servidores de autenticacion
+//usuario y contraselna ira a springboot y de ahi a la base de datos YA NO SE HACE POR TEMAS DE SEGURIDAD HACKING
+//no tiene que quedarse en la aplicación
+//instalamos un servidor de autorizacion, un boton de logearse en el servidor, el servidor devuelve una url, el movil te lleva a la pagina del servidor
+//esa web al logearse va al servidor, este envia un jwt un hash de numeros tokens para que la aplicacion valide si son los tokens correctos
+//mirar Keykloack
+//auth0.com dan 7000 cuentas de usuaario para probar gratis
+//usar el de google
+
 
 import java.util.List;
 import java.util.UUID;
@@ -28,13 +42,18 @@ public class FileController {
     }
 //peticion por get y "/algo"
     @GetMapping("/{id}")
-    public byte[] getId(@PathVariable UUID id) {
-        FileTable fileTable = fileRepository.getById(id);
+    public ResponseEntity<byte[]> getId(@PathVariable UUID id) {
+        FileTable file = fileRepository.findById(id).orElse(null);
 
-        return fileTable.data; //para solo devolver los bytes de la imagen
+        if (file == null) return ResponseEntity.notFound().build();
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.valueOf(file.contenttype))
+                .contentLength(file.data.length)
+                .body(file.data);
     }
 
-    @PostMapping
+    @PostMapping("/")
     public String upload(@RequestParam("file") MultipartFile uploadedFile) {
         try {
             System.out.println(uploadedFile.getOriginalFilename() + ", " + uploadedFile.getContentType());
@@ -47,16 +66,6 @@ public class FileController {
             e.printStackTrace();
         }
         return null;
-    }
-
-    public List<FileTable> talycual() {
-        return fileRepository.findAll();
-    }
-//request tipo post
-    //http get o post, si es por get i "/" usa este
-    @PostMapping("/")
-    public FileTable createMovie(@RequestBody FileTable fileTable) {
-        return fileRepository.save(fileTable);
     }
 
     @GetMapping
